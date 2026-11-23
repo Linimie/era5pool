@@ -24,11 +24,11 @@ python3 era5pool.py get -h           # all options with examples
 
 ```bash
 mkdir -p <your_path> && cd <your_path>
-wget https://raw.githubusercontent.com/Linimie/era5tool/main/era5pool.py
-wget https://raw.githubusercontent.com/Linimie/era5tool/main/README.md
+wget https://raw.githubusercontent.com/Linimie/era5pool/main/era5pool.py
+wget https://raw.githubusercontent.com/Linimie/era5pool/main/README.md
 ```
 
-Or clone the whole repository: `git clone https://github.com/Linimie/era5tool.git`
+Or clone the whole repository: `git clone https://github.com/Linimie/era5pool.git`
 
 Then add a shortcut to `~/.bash_profile` on Levante and log in again:
 
