@@ -56,6 +56,8 @@ GOOD TO KNOW
 
 NOT SUPPORTED: model-level (ml) data (stored as spectral coefficients). Use cdo sp2gp directly.
 
+AUTHOR: Linda van Garderen. Developed and tested with Claude Code (Anthropic) as the main tool.
+
 CITATION: please cite ERA5 (Hersbach et al., 2017/2020, doi:10.24381/cds.143582cf) and
 acknowledge Copernicus C3S and DKRZ data distribution. The citation is written into every file.
 """

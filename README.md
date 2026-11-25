@@ -285,4 +285,5 @@ do not go through era5pool or cdo:
 
 The full test report is in [TEST_REPORT.md](TEST_REPORT.md).
 
-Written by Linda van Garderen with Claude (Anthropic). Questions and improvements welcome.
+**Author:** Linda van Garderen. Developed and tested with Claude Code (Anthropic) as the main tool.
+Questions and improvements welcome.

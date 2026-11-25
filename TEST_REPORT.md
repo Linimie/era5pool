@@ -2,7 +2,8 @@
 
 **Version tested:** 1.1, and 1.2 after the fixes (2026-11-25)
 **Where:** DKRZ Levante, cdo 2.2.2, Python 3.10 (1.2 also with Python 3.6)
-**Tested by:** the author. The test checklist and the checking scripts were written with Claude (Anthropic).
+**Author and tester:** Linda van Garderen. Claude Code (Anthropic) was the main tool for developing
+era5pool and for writing the test checklist and the checking scripts.
 
 ## Summary
 
