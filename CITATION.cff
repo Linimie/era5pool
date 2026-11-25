@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use era5pool in your work, please cite it as below."
+title: "era5pool: ERA5 from the DKRZ pool as ready-to-use NetCDF"
+type: software
+authors:
+  - given-names: Linda
+    family-names: van Garderen
+    affiliation: Van Garderen Scientific
+version: "1.2"
+date-released: "2026-11-25"
+license: MIT
+repository-code: "https://github.com/Linimie/era5pool"
+keywords:
+  - ERA5
+  - DKRZ
+  - Levante
+  - NetCDF
+  - cdo

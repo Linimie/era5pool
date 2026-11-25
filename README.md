@@ -285,5 +285,15 @@ do not go through era5pool or cdo:
 
 The full test report is in [TEST_REPORT.md](TEST_REPORT.md).
 
+## License and citation
+
+era5pool is open source under the [MIT license](LICENSE): you are free to use, change and share
+it, also in your own services, as long as the copyright notice
+"Copyright (c) 2026 Linda van Garderen, Van Garderen Scientific" stays with it.
+
+If era5pool helped your work, please cite it (GitHub: "Cite this repository", or
+`CITATION.cff`): van Garderen, L. (2026): era5pool, version 1.2. Van Garderen Scientific.
+https://github.com/Linimie/era5pool. And please cite ERA5 itself (see "Good to know").
+
 **Author:** Linda van Garderen. Developed and tested with Claude Code (Anthropic) as the main tool.
 Questions and improvements welcome.

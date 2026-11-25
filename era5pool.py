@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2026 Linda van Garderen, Van Garderen Scientific
+# SPDX-License-Identifier: MIT  (full text: LICENSE, or https://opensource.org/license/mit)
 """
 era5pool: extract ERA5 data from the DKRZ pool (/pool/data/ERA5) as ready-to-use NetCDF.
 
@@ -57,6 +59,8 @@ GOOD TO KNOW
 NOT SUPPORTED: model-level (ml) data (stored as spectral coefficients). Use cdo sp2gp directly.
 
 AUTHOR: Linda van Garderen. Developed and tested with Claude Code (Anthropic) as the main tool.
+LICENSE: MIT, Copyright (c) 2026 Linda van Garderen, Van Garderen Scientific. Free to use,
+change and share, as long as this copyright notice is kept. Source: https://github.com/Linimie/era5pool
 
 CITATION: please cite ERA5 (Hersbach et al., 2017/2020, doi:10.24381/cds.143582cf) and
 acknowledge Copernicus C3S and DKRZ data distribution. The citation is written into every file.
