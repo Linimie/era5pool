@@ -38,6 +38,21 @@ alias era5pool='python3 <your_path>/era5pool.py'
 
 After that, `era5pool list` and `era5pool get ...` work from any folder.
 
+## Finding a variable
+
+`era5pool list` shows every variable in the pool, with its short name, code, units, and where
+and at which time steps it exists. Add a word to search the names, short names and codes:
+
+```bash
+era5pool list temperature     # everything with 'temperature' in the name
+era5pool list precip          # total precipitation, convective precipitation, ...
+era5pool list 167             # by code
+```
+
+The `available as` column shows `sf` (surface/single level) or `pl` (pressure levels, needs
+`--level`), `an` (analysis) or `fc` (forecast), and the time steps `1H`, `1D`, `1M` (and `IV` for
+invariant fields such as the land-sea mask).
+
 ## Examples
 
 ```bash
@@ -52,6 +67,9 @@ python3 era5pool.py get z --level 500 850 --freq 1D --start 2021-06-20 --end 202
 
 # Monthly precipitation 1991-2020 on a 1 degree grid (conservative remapping)
 python3 era5pool.py get tp --freq 1M --start 1991 --end 2020 --grid r360x180 --remap con
+
+# In a script or SLURM job: --yes answers era5pool's questions (here: create the folder results/)
+python3 era5pool.py get t2m --freq 1D --start 1991 --end 2020 --region europe --out results/t2m_europe.nc --yes
 
 # Not sure? Add --dry-run: it shows the files and the exact cdo command without running anything
 python3 era5pool.py get t2m --freq 1H --start 2021-06-28 --end 2021-06-29 --dry-run
@@ -72,15 +90,17 @@ era5pool get <variable> --freq ... --start ... --end ...   [optional extras, in 
 
 **Rules for combining options:**
 - **Where:** `--region` (named box) **or** `--box` (your own box), or neither for global. If you
-  give both, `--box` wins.
+  give both, `--box` wins (a NOTE says so).
 - **Land only:** `--land-only` combines with a region, a box or global. `--land-threshold` only
-  works together with `--land-only`.
+  works together with `--land-only`. If you give it without `--land-only`, era5pool asks whether
+  you meant land only (in scripts: add `--yes`, see below).
 - **Pressure levels:** `--level` is **required** for upper-air variables (`t`, `z`, `u`, `v`, `q`,
   `r`, …) and **not allowed** for surface variables (`t2m`, `tp`, `msl`, …). `era5pool list`
   shows which is which (`pl` or `sf`).
-- **Regridding:** `--remap` only works together with `--grid`.
-- **Checking first:** `--dry-run` can be added to anything. It shows what would happen and
-  changes nothing.
+- **Regridding:** `--remap` only works together with `--grid` (without it you get an error).
+- **Period:** if `--end` is before `--start`, the two are swapped (a NOTE says so).
+- **Checking first:** `--dry-run` can be added to anything. It shows the files, the estimated
+  size and run time and the cdo command, and creates nothing.
 
 **Examples that combine several options:**
 ```
@@ -93,18 +113,22 @@ era5pool get tp --freq 1M --start 1991 --end 2020 --region africa --grid r360x18
 
 | Option | Meaning |
 |---|---|
-| `variable` | **required.** Short name (`t2m`, `tp`, `msl`, `z`, `mn2t`, `mx2t`, `u10`, …) or code (`167`) |
+| `variable` | **required.** Short name or code: `t2m` (167), `tp` (228), `msl` (151), `z` (129), `mn2t` (202), `mx2t` (201), `u10` (165), … (`era5pool list` shows all) |
 | `--freq` | **required.** `1H` hourly, `1D` daily, `1M` monthly (see below) |
 | `--start`, `--end` | **required.** `YYYY`, `YYYY-MM` or `YYYY-MM-DD`; the end is inclusive (`--end 2020` = to 31 Dec 2020) |
-| `--region` | named box: `europe`, `africa`, `mediterranean`, `north_america`, `south_america`, `asia`, `oceania`, `arctic`, `antarctic`, `greenland`, `tropics`, `nh_extratropics`, `sh_extratropics`, `north_atlantic`, `north_pacific`, `nino34`, `nao_region` (see `era5pool.py regions`). Upper/lower case and `-` or `_` are all accepted (`NAO-region` works); the name is added to the output file |
+| `--region` | named box: `europe`, `africa`, `mediterranean`, `north_america`, `south_america`, `asia`, `oceania`, `arctic`, `antarctic`, `greenland`, `northern_hemisphere`, `southern_hemisphere`, `tropics`, `nh_extratropics`, `sh_extratropics`, `north_atlantic`, `north_pacific`, `nino34`, `nao_region` (see `era5pool.py regions`). Upper/lower case and `-` or `_` are all accepted (`NAO-region` works); the name is added to the output file |
 | `--box` | own box `lon1,lon2,lat1,lat2`, western longitudes negative, e.g. `-10,30,35,72`; overrides `--region` |
-| `--level` | pressure level(s) in hPa, only for upper-air variables (`t`, `z`, `u`, `v`, `q`, `r`, …) |
-| `--grid` | regrid, e.g. `r360x180` (1°) or `r1440x720` (0.25°); `--remap con` for precipitation and fluxes |
-| `--land-only` | mask out the sea with the ERA5 land-sea mask; sea cells become missing values (NaN) |
-| `--land-threshold` | land fraction a cell needs to count as land (default 0.5; e.g. `0.8` also drops coastal cells) |
+| `--level` | pressure level(s) in hPa, only for upper-air variables (`t`, `z`, `u`, `v`, `q`, `r`, …). One level: `--level 500`; several: separated by spaces, `--level 500 850 1000` |
+| `--grid` | regrid with cdo. Accepted: `rNXxNY` regular lon-lat (`r360x180` = 1°, `r1440x720` = 0.25°), `global_D` (`global_1`, `global_0.5`), `nN` Gaussian (`n80`), `tNgrid` Gaussian grid for spectral truncation T (`t63grid`, `t106grid`), or a cdo grid description file. See the [CDO manual](https://code.mpimet.mpg.de/projects/cdo/wiki/Cdo#Documentation) |
+| `--remap` | only with `--grid`: cdo remap method, `bil` bilinear (default), `con` conservative (use for precipitation and fluxes), `nn` nearest neighbour |
+| `--land-only` | keep land only, with ERA5's own land-sea mask from the pool (no extra file needed); sea cells become missing values (NaN) |
+| `--land-threshold` | only with `--land-only`: land fraction (0–1) a cell needs to count as land (default 0.5; `0.8` also drops coastal cells) |
 | `--family ET` | provisional ERA5T, for the last few months not yet in final ERA5 |
-| `--dry-run` | show what would happen, change nothing |
-| `--force` | run a large request on the login node anyway |
+| `--out` | output file name, may include a folder (default: an automatic name in the current folder) |
+| `--yes`, `-y` | answer yes to every question without asking, for scripts and SLURM jobs: create a missing output folder; use `--land-only` when only `--land-threshold` is given |
+| `--tmpdir` | folder for the temporary chunk files of long requests (default: next to the output) |
+| `--threads` | cdo threads (default 4) |
+| `--dry-run` | show the files, estimated size and run time, and the cdo command; create nothing |
 
 ## Named regions
 
@@ -120,6 +144,8 @@ era5pool get tp --freq 1M --start 1991 --end 2020 --region africa --grid r360x18
 | `arctic` | −180, 180, 60, 90 | Arctic polar cap north of 60°N |
 | `antarctic` | −180, 180, −90, −60 | Antarctica and Southern Ocean south of 60°S |
 | `greenland` | −75, −10, 59, 84 | Greenland (ice sheet, Greenland blocking) |
+| `northern_hemisphere` | −180, 180, 0, 90 | Northern Hemisphere 0–90°N |
+| `southern_hemisphere` | −180, 180, −90, 0 | Southern Hemisphere 0–90°S |
 | `tropics` | −180, 180, −30, 30 | Tropics 30°S–30°N |
 | `nh_extratropics` | −180, 180, 30, 90 | Northern Hemisphere extratropics 30–90°N |
 | `sh_extratropics` | −180, 180, −90, −30 | Southern Hemisphere extratropics 30–90°S |
@@ -151,16 +177,56 @@ To add a region, add one line to the `REGIONS` list near the top of `era5pool.py
 
 Details are in `/pool/data/ERA5/READMEs/README_ERA5_1D_files.txt` and `..._1M_files.txt`.
 
+**Daily minima and maxima: use `--freq 1D`.** On the original ERA5 grid, DKRZ's daily `mn2t`
+is exactly the minimum of the hourly values from 01 to 00 UTC (we checked this). But era5pool
+converts every field to a regular grid, by interpolating along the latitude rows, and
+interpolation and min/max do not commute. So if you take the minimum of era5pool's *hourly*
+output yourself, you get values that differ from the daily file by up to ~3 K. Means and sums
+are not affected. era5pool warns when you request hourly `mn2t`, `mx2t` or `fg10`.
+
 ## Good to know
 
 - **Geopotential:** `z` is geopotential (m² s⁻²); divide by 9.80665 for geopotential metres.
-- **Large requests:** the script estimates the output size. Above ~5 GB it stops and prints a
-  ready-made SLURM job script; put your project account in it and `sbatch` it.
-- **Long periods** are processed in chunks, because Levante allows ~1000 open files. Temporary
-  files go next to the output and are removed afterwards.
+- **Longitudes:** a box across 0° keeps negative longitudes (`-10,30` gives −10…30). A box
+  entirely west of 0° comes out as 0–360° (`-125,-115` gives 235…245).
+- **Questions and `--yes`:** era5pool asks before it creates a missing output folder, and when
+  `--land-threshold` is given without `--land-only`. In scripts and SLURM jobs nobody can answer,
+  so add `--yes` there: it answers every question with yes. Without `--yes`, a script stops
+  straight away with a clear message instead of waiting. The job script era5pool prints already
+  contains `--yes` where it is needed.
 - **Model-level data** (`ml`) are not supported; they are stored as spectral coefficients.
 - **Please cite ERA5** (Hersbach et al., doi:10.24381/cds.143582cf) and acknowledge Copernicus C3S
   and DKRZ. The citation is stored in every output file (`citation` attribute).
+
+## Large requests and run time
+
+era5pool estimates the size and run time of every request (also with `--dry-run`).
+
+- **On a login node** it runs requests up to ~5 GB (before compression) or ~10 minutes. DKRZ
+  asks to keep login nodes for light work, so above that era5pool does not run. It prints a
+  ready-made SLURM job script instead: save it as `job.sh`, put your project in `--account`, and
+  submit it with `sbatch job.sh`. era5pool never submits jobs itself.
+- **Inside a SLURM job** (`sbatch` or `salloc`) there is no limit.
+- **Long periods** are processed in chunks of 100 input files, which are joined at the end.
+  This keeps memory low and stays below Levante's limit of ~1000 open files. Temporary files go
+  next to the output (or to `--tmpdir`) and are removed afterwards. The chunk size can be changed
+  with the environment variable `ERA5POOL_CHUNK`.
+- **The output is compressed** (NetCDF4, zip level 1). The file is usually about two thirds of
+  the size estimate, and smaller with `--land-only`. The real size is printed at the end.
+
+Measured on Levante (shared partition, 4 CPUs × 940 MB, 2026-11-25):
+
+| Request | Input files | Before compression | File | Run time | Memory |
+|---|---|---|---|---|---|
+| 1 month hourly `t2m`, global | 31 | 2.4 GB | 1.6 GB | 1 min | 0.6 GB |
+| 1 year daily `z`, 3 levels, global | 12 | 3.6 GB | 2.5 GB | 1.5 min | 0.3 GB |
+| 76 years monthly `tp`, regridded to 1° | 76 | 0.24 GB | 0.21 GB | 0.5 min | 1.2 GB |
+| 1 year hourly `t2m`, Europe, land only | 365 | 1.2 GB | 0.44 GB | 2 min | 1.9 GB |
+| 1 year hourly `t2m`, global | 365 | 28.7 GB | 19.4 GB | 25 min | 1.9 GB |
+| 30 years daily `t2m`, global | 360 | 35.9 GB | 24.0 GB | 31 min | 1.9 GB |
+
+The job script asks for 4 CPUs with 940 MB each (the maximum per CPU on the shared
+partition) and twice the estimated run time.
 
 ## Land-only extraction
 
@@ -173,6 +239,23 @@ Area means over the result are then land-only means; still use cos(latitude) wei
 
 ## Version history
 
+- **1.2 (2026-11-25):** after a full test (see below).
+  - Large requests: a run time estimate, measured on Levante. On a login node, requests above
+    ~5 GB or ~10 min print a SLURM job script instead of running. Inside a SLURM job there is no
+    limit, and `--force` is gone (it is still accepted, with a note). The job script asks for
+    4 CPUs × 940 MB instead of 32 GB.
+  - Long periods: chunks of 100 files (was 300, which used 3.8 GB of memory and was killed in a
+    small SLURM job), joined with `cdo cat`.
+  - Questions: asks before creating a missing output folder, and asks whether you meant
+    `--land-only` when only `--land-threshold` is given. New `--yes` answers them in scripts and jobs.
+  - New regions `northern_hemisphere`, `southern_hemisphere`.
+  - Clear error for `--remap` without `--grid`;
+    an `--end` before `--start` is swapped; hints for ERA5T and for years before 1940; an unknown
+    `--grid` is reported before anything runs; cdo errors without a Python traceback.
+  - Warning for hourly `mn2t`, `mx2t`, `fg10` (use `--freq 1D` for daily extremes).
+  - Clearer help: codes next to names, `--level`, `--grid` (all forms cdo accepts), `--remap`,
+    `--land-threshold`, chunking, the use of cdo; a banner for `--dry-run`.
+  - The extracted data are identical to version 1.1.
 - **1.1 (2026-11-17):** `--land-only` and `--land-threshold`; `--version`; the main help
   (`era5pool -h`) now lists all options.
 - **1.0 (2026-11-17):** first shared version: `list`, `regions`, `get` with
@@ -181,13 +264,25 @@ Area means over the result are then land-only means; still use cos(latitude) wei
 To update a copy you made earlier, download `era5pool.py` and `README.md` again (or `git pull`). `era5pool --version`
 shows which version you have.
 
-## Tested (2026-11-17, Levante, cdo 2.6.6, Python 3.6)
+## Tested (2026-11-25, Levante, cdo 2.2.2, Python 3.10)
 
-`list` and search; unknown-name suggestions; daily T2m with a western-hemisphere box; Z500 and Z850;
-monthly precipitation regridded to 1° (conservative); hourly T2m in chunks; daily `mn2t`
-January–February 2012; ERA5T October 2026; the error for a pressure-level variable without
-`--level`; the large-request warning with its SLURM template.
-Version 1.1, `--land-only`: Europe daily (land values identical to unmasked; same mask every day);
-threshold 0.8 with 1° regridding; pressure levels; hourly data in chunks.
+Every command and option was run on Levante, and the output was checked against references that
+do not go through era5pool or cdo:
+
+- **Against the raw pool GRIB**, read with eccodes and converted to the regular grid
+  independently: hourly, daily and monthly `t2m`; daily `tp`; `mn2t` and `mx2t`; `z` at 500 and
+  850 hPa; the regions `europe`, `oceania` (across the date line) and `nao_region`; ERA5T. All
+  agree to within 0.00002 K (0.002 m² s⁻² for `z`).
+- **DKRZ's definitions:** daily mean = mean of 00–23 UTC; daily sum, minimum and maximum = over
+  01 UTC to 00 UTC of the next day; monthly = mean of the daily values. All confirmed.
+- **Options:** `--land-only` (land values unchanged, sea exactly where the ERA5 land-sea mask is
+  below the threshold); `--grid r360x180 --remap con` (global mean unchanged); chunking (identical
+  to an unchunked run); `--out`, `--threads`, `--tmpdir`, `--dry-run`; all error messages.
+- **Against an independent source:** the same fields downloaded from the Copernicus Climate Data
+  Store agree with a bias of 0.01 K for `t2m` and 0.01 m² s⁻² for `z500` (the rest is the
+  difference between the CDS 0.25° grid and the pool's N320 grid).
+- **Large requests** as SLURM jobs: see the table under "Large requests and run time".
+
+The full test report is in [TEST_REPORT.md](TEST_REPORT.md).
 
 Written by Linda van Garderen with Claude (Anthropic). Questions and improvements welcome.
